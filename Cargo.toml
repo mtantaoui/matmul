@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+raw-cpuid = "11.2.0"
 rayon = "1.10.0"
 
 [[bench]]
@@ -12,4 +13,6 @@ harness = false
 
 [dev-dependencies]
 criterion = "0.5.1"
+faer = "0.20.1"
+gemm = "0.18.0"
 rand = "0.8.5"

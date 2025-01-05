@@ -5,16 +5,13 @@ use rayon::{
     slice::{ParallelSlice, ParallelSliceMut},
 };
 
-use crate::kernels::kernels_sp_4x4::{kernel_4x1, kernel_4x2, kernel_4x3, kernel_4x4};
-
-const NUM_THREADS: usize = 8;
-
-pub const MR: usize = 4;
-pub const NR: usize = 4;
-
-const MC: usize = MR * NUM_THREADS;
-const NC: usize = NR * NUM_THREADS;
-const KC: usize = NUM_THREADS;
+use crate::{
+    KC, MC, MR, NC, NR,
+    kernels::single_precision::{
+        kernels_sp_4x4::{kernel_sp_4x1, kernel_sp_4x2, kernel_sp_4x3, kernel_sp_4x4},
+        kernels_sp_8x4::{kernel_sp_8x1, kernel_sp_8x2, kernel_sp_8x3, kernel_sp_8x4},
+    },
+};
 
 pub fn display(m: usize, n: usize, ld: usize, a: &[f32]) {
     for i in 0..m {
@@ -58,15 +55,15 @@ pub fn par_matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: us
 
                                     let mut c_chunk = c_chunk_mutex.lock().unwrap();
 
-                                    let mut c_micropanel =
+                                    let c_micropanel =
                                         &mut c_chunk[(jr * NR * m + (ic + ir * MR))..];
 
                                     match nr {
                                         1 => unsafe {
-                                            kernel_4x1(
+                                            kernel_sp_4x1(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -74,10 +71,10 @@ pub fn par_matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: us
                                             )
                                         },
                                         2 => unsafe {
-                                            kernel_4x2(
+                                            kernel_sp_4x2(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -85,10 +82,10 @@ pub fn par_matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: us
                                             )
                                         },
                                         3 => unsafe {
-                                            kernel_4x3(
+                                            kernel_sp_4x3(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -96,10 +93,10 @@ pub fn par_matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: us
                                             );
                                         },
                                         4 => unsafe {
-                                            kernel_4x4(
+                                            kernel_sp_4x4(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -127,7 +124,7 @@ fn pack_panel_b(b: &[f32], nr: usize, kc: usize, k: usize) -> Vec<f32> {
         panel_b_packed.extend(vec![0.0; NR - nr]);
     }
 
-    return panel_b_packed;
+    panel_b_packed
 }
 
 fn pack_block_b(b: &[f32], nc: usize, kc: usize, k: usize) -> Vec<f32> {
@@ -139,7 +136,7 @@ fn pack_block_b(b: &[f32], nc: usize, kc: usize, k: usize) -> Vec<f32> {
         block_b_packed.extend(panel_b_packed);
     }
 
-    return block_b_packed;
+    block_b_packed
 }
 
 fn pack_panel_a(a: &[f32], mr: usize, kc: usize, m: usize) -> Vec<f32> {
@@ -153,7 +150,7 @@ fn pack_panel_a(a: &[f32], mr: usize, kc: usize, m: usize) -> Vec<f32> {
         panel_a_packed.extend(vec![0.0; MR - mr]);
     }
 
-    return panel_a_packed;
+    panel_a_packed
 }
 
 fn pack_block_a(a: &[f32], mc: usize, kc: usize, m: usize) -> Vec<f32> {
@@ -165,7 +162,7 @@ fn pack_block_a(a: &[f32], mc: usize, kc: usize, m: usize) -> Vec<f32> {
         block_a_packed.extend(panel_a_packed);
     }
 
-    return block_a_packed;
+    block_a_packed
 }
 
 pub fn matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: usize) {
@@ -197,15 +194,15 @@ pub fn matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: usize)
                                     let nr = min(NR, nc - jr * NR);
                                     let mr = min(MR, mc - ir * MR);
 
-                                    let mut c_micropanel =
+                                    let c_micropanel =
                                         &mut c_chunk[(jr * NR * m + (ic + ir * MR))..];
 
                                     match nr {
                                         1 => unsafe {
-                                            kernel_4x1(
+                                            kernel_sp_4x1(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -213,10 +210,10 @@ pub fn matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: usize)
                                             )
                                         },
                                         2 => unsafe {
-                                            kernel_4x2(
+                                            kernel_sp_4x2(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -224,10 +221,10 @@ pub fn matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: usize)
                                             )
                                         },
                                         3 => unsafe {
-                                            kernel_4x3(
+                                            kernel_sp_4x3(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -235,10 +232,10 @@ pub fn matmul(a: &[f32], b: &[f32], c: &mut [f32], m: usize, n: usize, k: usize)
                                             );
                                         },
                                         4 => unsafe {
-                                            kernel_4x4(
+                                            kernel_sp_4x4(
                                                 a_panel,
                                                 b_panel,
-                                                &mut c_micropanel,
+                                                c_micropanel,
                                                 mr,
                                                 nr,
                                                 kc,
@@ -272,7 +269,7 @@ pub fn naive_gemm(
     for j in 0..n {
         for p in 0..k {
             for i in 0..m {
-                c[at(i, j, ld_c)] += a[at(i, p, ld_a)] * b[at(p, j, ld_b)];
+                c[at(i, j, ld_c)] = c[at(i, j, ld_c)] + a[at(i, p, ld_a)] * b[at(p, j, ld_b)];
             }
         }
     }
@@ -280,24 +277,20 @@ pub fn naive_gemm(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
     fn test_gemm_5_loops() {
-        // // defining matrices as vectors (column major matrices)
-        // let m = 10; //number of rows of A
-        // let n = 10; // number of columns of B
-        // let k = 1000; // number of columns of A and number of rows of B , they must be equal!!!!!
-
         // defining matrices as vectors (column major matrices)
-        let m = 99; //number of rows of A
-        let n = 100; // number of columns of B
-        let k = 100; // number of columns of A and number of rows of B , they must be equal!!!!!
+        let m = 5; //number of rows of A
+        let n = 5; // number of columns of B
+        let k = 10_000; // number of columns of A and number of rows of B , they must be equal!!!!!
 
-        let a: Vec<f32> = (1..=(m * k)).map(|i| i as f32).collect();
+        let a: Vec<f32> = (1..=(m * k)).map(|_| 1.0).collect();
         let ld_a = m; // leading dimension of A (number of rows)
 
-        let b: Vec<f32> = (1..=(k * n)).map(|i| i as f32).collect();
+        let b: Vec<f32> = (1..=(k * n)).map(|_| 1.0).collect();
         let ld_b = k; // leading dimension of B (number of rows)
 
         let mut c: Vec<f32> = (1..=(m * n)).map(|_| 0.0).collect();
@@ -308,6 +301,19 @@ mod tests {
         matmul(a.as_slice(), b.as_slice(), c.as_mut_slice(), m, n, k);
 
         naive_gemm(m, n, k, &a, ld_a, &b, ld_b, &mut c_ref, ld_c);
+
+        c.clone()
+            .into_iter()
+            .zip(c_ref.clone())
+            .enumerate()
+            .for_each(|(_, (c, c_ref))| {
+                println!(
+                    "{:?} {:?} --> {}",
+                    c_ref,
+                    c,
+                    (c - c_ref).abs() <= f32::EPSILON
+                )
+            });
 
         assert_eq!(c, c_ref);
     }

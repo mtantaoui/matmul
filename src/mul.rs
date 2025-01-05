@@ -5,12 +5,19 @@ use rayon::{
     slice::{ParallelSlice, ParallelSliceMut},
 };
 
-use crate::{
-    KC, MC, MR, NC, NR,
-    kernels::single_precision::{
-        kernels_sp_4x4::{kernel_sp_4x1, kernel_sp_4x2, kernel_sp_4x3, kernel_sp_4x4},
-        kernels_sp_8x4::{kernel_sp_8x1, kernel_sp_8x2, kernel_sp_8x3, kernel_sp_8x4},
-    },
+use crate::{KC, MC, MR, NC, NR};
+
+#[cfg(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "avx",
+    target_feature = "avx2",
+    target_feature = "fma",
+    target_feature = "sse",
+    target_feature = "sse2"
+))]
+use crate::kernels::single_precision::{
+    kernels_sp_4x4::{kernel_sp_4x1, kernel_sp_4x2, kernel_sp_4x3, kernel_sp_4x4},
+    kernels_sp_8x4::{kernel_sp_8x1, kernel_sp_8x2, kernel_sp_8x3, kernel_sp_8x4},
 };
 
 pub fn display(m: usize, n: usize, ld: usize, a: &[f32]) {

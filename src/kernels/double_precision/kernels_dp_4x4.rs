@@ -28,7 +28,6 @@ use crate::{MR, NR};
     enable = "sse",
     enable = "sse2"
 )]
-#[doc(hidden)] // Exclude this function from generated documentation
 pub unsafe fn kernel_dp_4x1(
     a: &[f64],
     b: &[f64],
@@ -101,7 +100,6 @@ pub unsafe fn kernel_dp_4x1(
     enable = "sse",
     enable = "sse2"
 )]
-#[doc(hidden)] // Exclude this function from generated documentation
 pub unsafe fn kernel_dp_4x2(
     a: &[f64],
     b: &[f64],
@@ -193,7 +191,6 @@ pub unsafe fn kernel_dp_4x2(
     enable = "sse",
     enable = "sse2"
 )]
-#[doc(hidden)] // Exclude this function from generated documentation
 pub unsafe fn kernel_dp_4x3(
     a: &[f64],
     b: &[f64],
@@ -304,7 +301,6 @@ pub unsafe fn kernel_dp_4x3(
     enable = "sse",
     enable = "sse2"
 )]
-#[doc(hidden)] // Exclude this function from generated documentation
 pub unsafe fn kernel_dp_4x4(
     a: &[f64],
     b: &[f64],

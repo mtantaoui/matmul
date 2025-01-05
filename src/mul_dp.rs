@@ -8,11 +8,18 @@ use rayon::{
     slice::{ParallelSlice, ParallelSliceMut},
 };
 
-use crate::{
-    KC, MC, MR, NC, NR,
-    kernels::double_precision::kernels_dp_4x4::{
-        kernel_dp_4x1, kernel_dp_4x2, kernel_dp_4x3, kernel_dp_4x4,
-    },
+use crate::{KC, MC, MR, NC, NR};
+
+#[cfg(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "avx",
+    target_feature = "avx2",
+    target_feature = "fma",
+    target_feature = "sse",
+    target_feature = "sse2"
+))]
+use crate::kernels::double_precision::kernels_dp_4x4::{
+    kernel_dp_4x1, kernel_dp_4x2, kernel_dp_4x3, kernel_dp_4x4,
 };
 
 pub fn par_matmul(a: &[f64], b: &[f64], c: &mut [f64], m: usize, n: usize, k: usize) {

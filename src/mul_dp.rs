@@ -1,6 +1,6 @@
 use std::{
     cmp::min,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex},
 };
 
 use rayon::{
@@ -21,7 +21,7 @@ pub fn par_matmul(a: &[f64], b: &[f64], c: &mut [f64], m: usize, n: usize, k: us
         let nc = min(NC, n - jc);
 
         // let c_chunk_mutex = Mutex::new(c_chunk);
-        let c_chunk_mutex = Arc::new(RwLock::new(c_chunk));
+        let c_chunk_mutex = Arc::new(Mutex::new(c_chunk));
 
         a.chunks(m * KC).enumerate().for_each(|(p, a_chunk)| {
             let pc = p * KC;
@@ -45,7 +45,7 @@ pub fn par_matmul(a: &[f64], b: &[f64], c: &mut [f64], m: usize, n: usize, k: us
                                 let nr = min(NR, nc - jr * NR);
                                 let mr = min(MR, mc - ir * MR);
 
-                                let mut c_chunk = c_chunk_mutex.write().unwrap();
+                                let mut c_chunk = c_chunk_mutex.lock().unwrap();
 
                                 let c_micropanel = &mut c_chunk[(jr * NR * m + (ic + ir * MR))..];
 

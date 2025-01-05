@@ -281,40 +281,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_gemm_5_loops() {
-        // defining matrices as vectors (column major matrices)
-        let m = 5; //number of rows of A
-        let n = 5; // number of columns of B
-        let k = 10_000; // number of columns of A and number of rows of B , they must be equal!!!!!
+    fn test_par_matmul() {
+        let (m, n, k) = (2, 4, 3);
+        let a = vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0];
+        let b = vec![
+            1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0,
+        ];
+        let mut c = vec![2.0, 7.0, 6.0, 2.0, 0.0, 7.0, 4.0, 2.0];
 
-        let a: Vec<f32> = (1..=(m * k)).map(|_| 1.0).collect();
-        let ld_a = m; // leading dimension of A (number of rows)
+        par_matmul(a.as_slice(), b.as_slice(), c.as_mut_slice(), m, n, k);
 
-        let b: Vec<f32> = (1..=(k * n)).map(|_| 1.0).collect();
-        let ld_b = k; // leading dimension of B (number of rows)
+        assert!(c == vec![40.0, 90.0, 50.0, 100.0, 50.0, 120.0, 60.0, 130.0,]);
+    }
 
-        let mut c: Vec<f32> = (1..=(m * n)).map(|_| 0.0).collect();
-        let mut c_ref: Vec<f32> = (1..=(m * n)).map(|_| 0.0).collect();
-        let ld_c = m; // leading dimension of C (number of rows)
+    #[test]
+    fn test_matmul() {
+        let (m, n, k) = (2, 4, 3);
+        let a = vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0];
+        let b = vec![
+            1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0,
+        ];
+        let mut c = vec![2.0, 7.0, 6.0, 2.0, 0.0, 7.0, 4.0, 2.0];
 
-        // computing C:=AB + C
         matmul(a.as_slice(), b.as_slice(), c.as_mut_slice(), m, n, k);
 
-        naive_gemm(m, n, k, &a, ld_a, &b, ld_b, &mut c_ref, ld_c);
-
-        c.clone()
-            .into_iter()
-            .zip(c_ref.clone())
-            .enumerate()
-            .for_each(|(_, (c, c_ref))| {
-                println!(
-                    "{:?} {:?} --> {}",
-                    c_ref,
-                    c,
-                    (c - c_ref).abs() <= f32::EPSILON
-                )
-            });
-
-        assert_eq!(c, c_ref);
+        assert!(c == vec![40.0, 90.0, 50.0, 100.0, 50.0, 120.0, 60.0, 130.0,]);
     }
 }
